@@ -1,0 +1,21 @@
+{
+  "name": "katsuyou-trainer",
+  "version": "0.1.0",
+  "private": true,
+  "description": "活用 Trainer — Japanese Verb Conjugation practice (Alpine.js + TypeScript)",
+  "type": "module",
+  "scripts": {
+    "dev": "bun --hot index.html",
+    "build": "bun build index.html --outdir=dist --minify",
+    "typecheck": "tsc --noEmit",
+    "start": "bun run dev"
+  },
+  "dependencies": {
+    "alpinejs": "^3.14.1"
+  },
+  "devDependencies": {
+    "@types/alpinejs": "^3.13.10",
+    "@types/bun": "latest",
+    "typescript": "^5.5.0"
+  }
+}

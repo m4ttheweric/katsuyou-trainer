@@ -1,0 +1,1654 @@
+<!doctype html>
+<html lang="ja">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>活用 Trainer — Japanese Verb Conjugation</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;600;700;900&family=DM+Mono:wght@400;500&family=Fraunces:opsz,wght@9..144,400;9..144,700;9..144,900&display=swap"
+            rel="stylesheet"
+        />
+        <script type="module" src="./src/main.ts"></script>
+    </head>
+    <body>
+        <div x-data="verbTrainer()" class="fade-in">
+            <!-- Header -->
+            <div style="padding: 36px 24px 20px; text-align: center">
+                <div
+                    style="
+                        font-size: 10px;
+                        letter-spacing: 5px;
+                        text-transform: uppercase;
+                        color: #b0a890;
+                        font-family: &quot;DM Mono&quot;, monospace;
+                        margin-bottom: 8px;
+                    "
+                >
+                    動詞活用練習
+                </div>
+                <h1
+                    style="
+                        font-size: 34px;
+                        font-weight: 900;
+                        color: #1a1a2e;
+                        margin: 0 0 2px;
+                        letter-spacing: -0.5px;
+                        font-family: &quot;Fraunces&quot;, serif;
+                    "
+                >
+                    活用 <span style="color: #d94f5c">Trainer</span>
+                </h1>
+                <p style="font-size: 13px; color: #a0a0a0; margin: 0 0 24px">
+                    Japanese Verb Conjugation — 419 built-in verbs + Jisho.org
+                    lookup
+                </p>
+                <div
+                    style="
+                        display: inline-flex;
+                        flex-wrap: wrap;
+                        justify-content: center;
+                        max-width: 100%;
+                        background: #fff;
+                        border-radius: 10px;
+                        padding: 4px;
+                        border: 1px solid #e8e5e0;
+                        gap: 2px;
+                    "
+                >
+                    <template
+                        x-for="t in [{id:'lookup',label:ui.tabLookup},{id:'study',label:ui.tabStudy},{id:'quiz',label:ui.tabQuiz},{id:'reference',label:ui.tabReference}]"
+                    >
+                        <button
+                            class="tab"
+                            :class="mode===t.id&&'tab-active'"
+                            @click="mode=t.id;quizStarted=false"
+                            x-text="t.label"
+                        ></button>
+                    </template>
+                </div>
+
+                <!-- Kanji ↔ Kana toggle -->
+                <div
+                    style="
+                        margin-top: 14px;
+                        display: flex;
+                        justify-content: center;
+                    "
+                >
+                    <div
+                        class="script-toggle"
+                        role="group"
+                        aria-label="Display script"
+                    >
+                        <button
+                            type="button"
+                            class="script-toggle-btn"
+                            :class="!displayKana&&'script-toggle-active'"
+                            @click="displayKana=false"
+                            aria-pressed="!displayKana"
+                            x-text="ui.scriptKanji"
+                        ></button>
+                        <button
+                            type="button"
+                            class="script-toggle-btn"
+                            :class="displayKana&&'script-toggle-active'"
+                            @click="displayKana=true"
+                            aria-pressed="displayKana"
+                            x-text="ui.scriptKana"
+                        ></button>
+                    </div>
+                </div>
+            </div>
+
+            <div style="max-width: 600px; margin: 0 auto; padding: 0 20px 60px">
+                <!-- ─── LOOKUP ─── -->
+                <div x-show="mode==='lookup'" x-transition class="fade-in">
+                    <div style="display: flex; gap: 8px; margin-bottom: 20px">
+                        <input
+                            type="text"
+                            x-model="input"
+                            @keydown.enter="handleLookup()"
+                            :placeholder="ui.lookupPlaceholder"
+                            style="
+                                flex: 1;
+                                padding: 13px 18px;
+                                font-size: 18px;
+                                border: 2px solid #e0ddd5;
+                                border-radius: 10px;
+                                background: #fff;
+                                font-family: inherit;
+                            "
+                        />
+                        <button
+                            class="btn-primary"
+                            style="
+                                padding: 13px 26px;
+                                font-size: 15px;
+                                border-radius: 10px;
+                            "
+                            :style="loading&&'opacity:.6'"
+                            @click="handleLookup()"
+                            x-text="loading?'...':'活用'"
+                        ></button>
+                    </div>
+
+                    <!-- Loading -->
+                    <div
+                        x-show="loading"
+                        style="
+                            text-align: center;
+                            padding: 32px;
+                            color: #bbb;
+                            font-size: 14px;
+                        "
+                        class="pulse"
+                        x-text="ui.lookupLoading"
+                    ></div>
+
+                    <!-- Error -->
+                    <div
+                        x-show="error&&!result"
+                        x-text="error"
+                        style="
+                            padding: 16px 20px;
+                            border-radius: 10px;
+                            background: #fdf2f2;
+                            border: 1px solid #f0d0d0;
+                            color: #a04040;
+                            font-size: 14px;
+                            text-align: center;
+                        "
+                        class="fade-in"
+                    ></div>
+
+                    <!-- Disambiguation -->
+                    <div x-show="disambig&&!result" class="fade-in">
+                        <div
+                            style="
+                                text-align: center;
+                                font-size: 14px;
+                                color: #666;
+                                margin-bottom: 14px;
+                            "
+                        >
+                            Multiple verbs match 「<span
+                                x-text="input.trim()"
+                                style="font-weight: 600"
+                            ></span
+                            >」 — which one?
+                        </div>
+                        <div
+                            style="
+                                display: flex;
+                                flex-direction: column;
+                                gap: 8px;
+                            "
+                        >
+                            <template x-for="(d,i) in disambig||[]" :key="i">
+                                <button
+                                    class="disambig-btn"
+                                    @click="selectVerb(d)"
+                                >
+                                    <span
+                                        x-text="d.word"
+                                        style="
+                                            font-size: 24px;
+                                            font-weight: 700;
+                                            color: #1a1a2e;
+                                            min-width: 60px;
+                                        "
+                                    ></span>
+                                    <div style="flex: 1">
+                                        <div
+                                            x-text="(d.meanings||[]).join('; ')"
+                                            style="font-size: 13px; color: #555"
+                                        ></div>
+                                        <div
+                                            style="
+                                                display: flex;
+                                                gap: 6px;
+                                                margin-top: 4px;
+                                            "
+                                        >
+                                            <span
+                                                class="badge"
+                                                :class="'badge-'+d.type"
+                                                x-text="typeLabel(d.type)"
+                                            ></span>
+                                            <span
+                                                x-show="d.jlpt"
+                                                class="badge badge-jlpt"
+                                                x-text="'JLPT '+d.jlpt"
+                                            ></span>
+                                        </div>
+                                    </div>
+                                </button>
+                            </template>
+                        </div>
+                    </div>
+
+                    <!-- Result -->
+                    <template x-if="result&&!loading"
+                        ><div class="fade-in">
+                            <!-- Info card -->
+                            <div class="card info-card" x-show="result">
+                                <div
+                                    style="
+                                        display: flex;
+                                        align-items: center;
+                                        gap: 8px;
+                                        flex-wrap: wrap;
+                                        margin-bottom: 10px;
+                                    "
+                                >
+                                    <span
+                                        class="badge"
+                                        :class="'badge-'+(result&&result.type)"
+                                        x-text="result&&typeLabel(result.type)"
+                                    ></span>
+                                    <span
+                                        x-show="meta&&meta.jlpt"
+                                        class="badge badge-jlpt"
+                                        x-text="meta&&'JLPT '+meta.jlpt"
+                                    ></span>
+                                    <span
+                                        x-show="meta&&meta.isCommon"
+                                        class="badge badge-common"
+                                        >COMMON</span
+                                    >
+                                    <span
+                                        x-show="meta&&meta.source==='jisho'"
+                                        class="badge badge-jisho"
+                                        >via Jisho</span
+                                    >
+                                </div>
+                                <div
+                                    x-show="meta&&meta.reading&&meta.reading!==meta.word"
+                                    x-text="meta&&meta.reading"
+                                    style="
+                                        font-size: 15px;
+                                        color: #7a7590;
+                                        margin-bottom: 4px;
+                                    "
+                                ></div>
+                                <div
+                                    x-show="meta"
+                                    x-text="meta&&(meta.meanings||[]).join('; ')"
+                                    style="
+                                        font-size: 14px;
+                                        color: #555;
+                                        line-height: 1.5;
+                                    "
+                                ></div>
+                            </div>
+
+                            <!-- Stem Breakdown -->
+                            <div
+                                x-show="result"
+                                x-data="{open:false}"
+                                class="breakdown-card"
+                            >
+                                <button
+                                    class="breakdown-toggle"
+                                    @click="open=!open"
+                                >
+                                    <span
+                                        style="
+                                            font-size: 13px;
+                                            font-weight: 600;
+                                        "
+                                        :style="'color:'+(result.type==='godan'?'#3572b0':result.type==='ichidan'?'#d94f5c':'#9b6bb0')"
+                                        x-text="result.type==='godan'?'How it conjugates — vowel row shifts':result.type==='ichidan'?'How it conjugates':'How it conjugates (irregular)'"
+                                    ></span>
+                                    <span
+                                        style="
+                                            font-size: 12px;
+                                            color: #bbb;
+                                            transition: transform 0.2s;
+                                        "
+                                        :style="open&&'transform:rotate(180deg)'"
+                                        >▼</span
+                                    >
+                                </button>
+                                <div
+                                    x-show="open"
+                                    x-transition
+                                    class="fade-in"
+                                    style="margin-top: 14px"
+                                >
+                                    <!-- Ichidan -->
+                                    <template x-if="result.type==='ichidan'">
+                                        <div>
+                                            <div
+                                                style="
+                                                    font-size: 13px;
+                                                    color: #666;
+                                                    line-height: 1.8;
+                                                "
+                                            >
+                                                Ichidan verbs are simple — drop
+                                                the final
+                                                <span
+                                                    style="
+                                                        background: #d94f5c14;
+                                                        color: #d94f5c;
+                                                        padding: 2px 6px;
+                                                        border-radius: 4px;
+                                                        font-weight: 600;
+                                                    "
+                                                    >る</span
+                                                >
+                                                and attach the suffix directly.
+                                            </div>
+                                            <div
+                                                style="
+                                                    display: flex;
+                                                    align-items: center;
+                                                    gap: 8px;
+                                                    margin-top: 14px;
+                                                    flex-wrap: wrap;
+                                                "
+                                            >
+                                                <span
+                                                    x-text="stemOf(result)"
+                                                    style="
+                                                        font-size: 20px;
+                                                        font-weight: 700;
+                                                        color: #1a1a2e;
+                                                    "
+                                                ></span>
+                                                <span
+                                                    style="
+                                                        font-size: 20px;
+                                                        color: #d94f5c;
+                                                        text-decoration: line-through;
+                                                        opacity: 0.5;
+                                                    "
+                                                    >る</span
+                                                >
+                                                <span
+                                                    style="
+                                                        font-size: 14px;
+                                                        color: #bbb;
+                                                    "
+                                                    >→</span
+                                                >
+                                                <span
+                                                    x-text="stemOf(result)"
+                                                    style="
+                                                        font-size: 16px;
+                                                        font-weight: 600;
+                                                        color: #1a1a2e;
+                                                    "
+                                                ></span>
+                                                <span
+                                                    style="
+                                                        font-size: 14px;
+                                                        color: #999;
+                                                        background: #f5f0e8;
+                                                        padding: 2px 8px;
+                                                        border-radius: 4px;
+                                                    "
+                                                    >+ suffix</span
+                                                >
+                                            </div>
+                                            <div
+                                                style="
+                                                    margin-top: 12px;
+                                                    display: flex;
+                                                    flex-wrap: wrap;
+                                                    gap: 6px;
+                                                "
+                                            >
+                                                <template
+                                                    x-for="s in ['ます','ない','て','た']"
+                                                >
+                                                    <span
+                                                        style="
+                                                            font-size: 13px;
+                                                            padding: 4px 10px;
+                                                            border-radius: 6px;
+                                                            background: #faf9f7;
+                                                            border: 1px solid
+                                                                #f0ede8;
+                                                            color: #555;
+                                                        "
+                                                    >
+                                                        <span
+                                                            x-text="stemOf(result)"
+                                                            style="
+                                                                color: #1a1a2e;
+                                                                font-weight: 600;
+                                                            "
+                                                        ></span
+                                                        ><span
+                                                            x-text="s"
+                                                            style="
+                                                                color: #d94f5c;
+                                                            "
+                                                        ></span>
+                                                    </span>
+                                                </template>
+                                            </div>
+                                        </div>
+                                    </template>
+                                    <!-- Irregular -->
+                                    <template
+                                        x-if="result.type==='suru'||result.type==='kuru'"
+                                    >
+                                        <div>
+                                            <div
+                                                style="
+                                                    font-size: 13px;
+                                                    color: #666;
+                                                    line-height: 1.8;
+                                                "
+                                            >
+                                                This is an irregular verb — the
+                                                stem changes form depending on
+                                                the conjugation. These must be
+                                                memorized.
+                                            </div>
+                                            <div
+                                                style="
+                                                    margin-top: 12px;
+                                                    display: flex;
+                                                    flex-wrap: wrap;
+                                                    gap: 6px;
+                                                "
+                                            >
+                                                <template
+                                                    x-for="f in irregularForms(result)"
+                                                >
+                                                    <span
+                                                        style="
+                                                            font-size: 13px;
+                                                            padding: 4px 10px;
+                                                            border-radius: 6px;
+                                                            background: #f8f5fb;
+                                                            border: 1px solid
+                                                                #e8e0f0;
+                                                            color: #555;
+                                                        "
+                                                    >
+                                                        <span
+                                                            x-text="f.prefix"
+                                                            style="
+                                                                color: #1a1a2e;
+                                                                font-weight: 600;
+                                                            "
+                                                        ></span
+                                                        ><span
+                                                            x-text="f.kana"
+                                                            style="
+                                                                color: #9b6bb0;
+                                                                font-weight: 600;
+                                                            "
+                                                        ></span>
+                                                        <span
+                                                            x-text="f.label"
+                                                            style="
+                                                                color: #bbb;
+                                                                margin-left: 4px;
+                                                                font-size: 11px;
+                                                            "
+                                                        ></span>
+                                                    </span>
+                                                </template>
+                                            </div>
+                                        </div>
+                                    </template>
+                                    <!-- Godan -->
+                                    <template x-if="result.type==='godan'">
+                                        <div>
+                                            <div
+                                                style="
+                                                    font-size: 13px;
+                                                    color: #666;
+                                                    line-height: 1.8;
+                                                    margin-bottom: 16px;
+                                                "
+                                            >
+                                                Godan verbs shift their final
+                                                kana
+                                                <span
+                                                    style="
+                                                        background: #3572b014;
+                                                        color: #3572b0;
+                                                        padding: 2px 6px;
+                                                        border-radius: 4px;
+                                                        font-weight: 600;
+                                                    "
+                                                    x-text="godanInfo(result).lastKana"
+                                                ></span>
+                                                across the five vowel rows of
+                                                its column. The stem
+                                                <span
+                                                    style="
+                                                        font-weight: 600;
+                                                        color: #1a1a2e;
+                                                    "
+                                                    x-text="godanInfo(result).stem"
+                                                ></span>
+                                                stays the same.
+                                            </div>
+                                            <div class="row-chart">
+                                                <div class="row-header">
+                                                    <span>Row</span
+                                                    ><span>From</span
+                                                    ><span></span><span>To</span
+                                                    ><span>Used for</span>
+                                                </div>
+                                                <template
+                                                    x-for="(m,i) in godanInfo(result).mappings"
+                                                    :key="i"
+                                                >
+                                                    <div class="row-item">
+                                                        <span
+                                                            style="
+                                                                font-size: 11px;
+                                                                font-weight: 600;
+                                                                letter-spacing: 0.3px;
+                                                            "
+                                                            :style="'color:'+m.color"
+                                                            x-text="m.row+'段'"
+                                                        ></span>
+                                                        <span
+                                                            style="
+                                                                font-size: 17px;
+                                                                font-weight: 600;
+                                                                color: #bbb;
+                                                            "
+                                                            x-text="godanInfo(result).lastKana"
+                                                        ></span>
+                                                        <span
+                                                            style="
+                                                                font-size: 13px;
+                                                                color: #ddd;
+                                                            "
+                                                            >→</span
+                                                        >
+                                                        <span
+                                                            style="
+                                                                font-size: 17px;
+                                                                font-weight: 700;
+                                                            "
+                                                            :style="'color:'+(m.row==='う'?'#999':m.color)"
+                                                            x-text="m.to"
+                                                        ></span>
+                                                        <span
+                                                            style="
+                                                                font-size: 12px;
+                                                                color: #888;
+                                                            "
+                                                        >
+                                                            <span
+                                                                style="
+                                                                    color: #1a1a2e;
+                                                                    font-weight: 500;
+                                                                "
+                                                                x-text="godanInfo(result).stem"
+                                                            ></span
+                                                            ><span
+                                                                :style="'color:'+m.color+';font-weight:600'"
+                                                                x-text="m.to"
+                                                            ></span
+                                                            ><span
+                                                                style="
+                                                                    color: #999;
+                                                                "
+                                                                x-text="m.suffix"
+                                                            ></span>
+                                                            <span
+                                                                style="
+                                                                    color: #bbb;
+                                                                    margin-left: 6px;
+                                                                "
+                                                                x-text="'| '+m.form"
+                                                            ></span>
+                                                        </span>
+                                                    </div>
+                                                </template>
+                                            </div>
+                                            <!-- Te-form sound change -->
+                                            <template
+                                                x-if="godanInfo(result).teRule"
+                                            >
+                                                <div class="te-box">
+                                                    <div
+                                                        style="
+                                                            font-size: 11px;
+                                                            font-weight: 600;
+                                                            color: #a08040;
+                                                            letter-spacing: 1px;
+                                                            margin-bottom: 8px;
+                                                        "
+                                                    >
+                                                        て / た FORM — SOUND
+                                                        CHANGE (音便)
+                                                    </div>
+                                                    <div
+                                                        style="
+                                                            font-size: 13px;
+                                                            color: #6b5e45;
+                                                            line-height: 1.7;
+                                                        "
+                                                    >
+                                                        <template
+                                                            x-if="godanInfo(result).isIku"
+                                                        >
+                                                            <span
+                                                                ><b>行く</b> is
+                                                                a special case:
+                                                                <b
+                                                                    >行って /
+                                                                    行った</b
+                                                                >
+                                                                (not
+                                                                行いて)</span
+                                                            >
+                                                        </template>
+                                                        <template
+                                                            x-if="!godanInfo(result).isIku"
+                                                        >
+                                                            <div>
+                                                                The ending
+                                                                <span
+                                                                    style="
+                                                                        font-weight: 600;
+                                                                        color: #a08040;
+                                                                    "
+                                                                    x-text="godanInfo(result).lastKana"
+                                                                ></span>
+                                                                doesn't shift to
+                                                                a vowel row — it
+                                                                undergoes a
+                                                                sound change
+                                                                instead:
+                                                                <div
+                                                                    style="
+                                                                        margin-top: 8px;
+                                                                        display: flex;
+                                                                        gap: 12px;
+                                                                        flex-wrap: wrap;
+                                                                    "
+                                                                >
+                                                                    <span
+                                                                        style="
+                                                                            padding: 5px
+                                                                                12px;
+                                                                            border-radius: 6px;
+                                                                            background: #fff;
+                                                                            border: 1px
+                                                                                solid
+                                                                                #e8dcc0;
+                                                                            font-weight: 600;
+                                                                            font-size: 16px;
+                                                                        "
+                                                                    >
+                                                                        <span
+                                                                            style="
+                                                                                color: #1a1a2e;
+                                                                            "
+                                                                            x-text="godanInfo(result).stem"
+                                                                        ></span
+                                                                        ><span
+                                                                            style="
+                                                                                color: #a08040;
+                                                                            "
+                                                                            x-text="godanInfo(result).teRule.change"
+                                                                        ></span>
+                                                                    </span>
+                                                                    <span
+                                                                        style="
+                                                                            padding: 5px
+                                                                                12px;
+                                                                            border-radius: 6px;
+                                                                            background: #fff;
+                                                                            border: 1px
+                                                                                solid
+                                                                                #e8dcc0;
+                                                                            font-weight: 600;
+                                                                            font-size: 16px;
+                                                                        "
+                                                                    >
+                                                                        <span
+                                                                            style="
+                                                                                color: #1a1a2e;
+                                                                            "
+                                                                            x-text="godanInfo(result).stem"
+                                                                        ></span
+                                                                        ><span
+                                                                            style="
+                                                                                color: #a08040;
+                                                                            "
+                                                                            x-text="godanInfo(result).teRule.change.replace('て','た').replace('で','だ')"
+                                                                        ></span>
+                                                                    </span>
+                                                                </div>
+                                                                <div
+                                                                    style="
+                                                                        margin-top: 10px;
+                                                                        font-size: 12px;
+                                                                        color: #b0a080;
+                                                                    "
+                                                                >
+                                                                    Rule:
+                                                                    <span
+                                                                        style="
+                                                                            font-weight: 600;
+                                                                        "
+                                                                        x-text="godanInfo(result).teRule.rule"
+                                                                    ></span>
+                                                                    — same
+                                                                    pattern for
+                                                                    all verbs
+                                                                    ending in
+                                                                    <span
+                                                                        x-text="godanInfo(result).lastKana"
+                                                                    ></span>
+                                                                </div>
+                                                            </div>
+                                                        </template>
+                                                    </div>
+                                                </div>
+                                            </template>
+                                        </div>
+                                    </template>
+                                </div>
+                            </div>
+
+                            <!-- Core forms (Plain/Polite × Non-Past/Past) -->
+                            <div class="core-card">
+                                <div
+                                    class="core-card-title"
+                                    x-text="ui.coreFormsTitle"
+                                ></div>
+                                <div
+                                    class="core-card-subtitle"
+                                    x-text="ui.coreFormsSubtitle"
+                                ></div>
+                                <div class="core-grid">
+                                    <div class="core-grid-corner"></div>
+                                    <div
+                                        class="core-grid-col-header"
+                                        x-text="ui.registerPlain"
+                                    ></div>
+                                    <div
+                                        class="core-grid-col-header"
+                                        x-text="ui.registerPolite"
+                                    ></div>
+
+                                    <div
+                                        class="core-grid-row-header"
+                                        x-text="ui.tenseNonPast"
+                                    ></div>
+                                    <div class="core-cell">
+                                        <div class="core-cell-aff">
+                                            <span class="core-cell-polarity"
+                                                >+</span
+                                            >
+                                            <span
+                                                class="core-cell-form"
+                                                x-text="formLabelJp(coreForms(result).nonPast.plain.aff.key)"
+                                            ></span>
+                                            <span
+                                                class="core-cell-value"
+                                                x-text="coreForms(result).nonPast.plain.aff.value"
+                                            ></span>
+                                        </div>
+                                        <div class="core-cell-neg">
+                                            <span class="core-cell-polarity"
+                                                >−</span
+                                            >
+                                            <span
+                                                class="core-cell-form"
+                                                x-text="formLabelJp(coreForms(result).nonPast.plain.neg.key)"
+                                            ></span>
+                                            <span
+                                                class="core-cell-value"
+                                                x-text="coreForms(result).nonPast.plain.neg.value"
+                                            ></span>
+                                        </div>
+                                    </div>
+                                    <div class="core-cell">
+                                        <div class="core-cell-aff">
+                                            <span class="core-cell-polarity"
+                                                >+</span
+                                            >
+                                            <span
+                                                class="core-cell-form"
+                                                x-text="formLabelJp(coreForms(result).nonPast.polite.aff.key)"
+                                            ></span>
+                                            <span
+                                                class="core-cell-value"
+                                                x-text="coreForms(result).nonPast.polite.aff.value"
+                                            ></span>
+                                        </div>
+                                        <div class="core-cell-neg">
+                                            <span class="core-cell-polarity"
+                                                >−</span
+                                            >
+                                            <span
+                                                class="core-cell-form"
+                                                x-text="formLabelJp(coreForms(result).nonPast.polite.neg.key)"
+                                            ></span>
+                                            <span
+                                                class="core-cell-value"
+                                                x-text="coreForms(result).nonPast.polite.neg.value"
+                                            ></span>
+                                        </div>
+                                    </div>
+
+                                    <div
+                                        class="core-grid-row-header"
+                                        x-text="ui.tensePast"
+                                    ></div>
+                                    <div class="core-cell">
+                                        <div class="core-cell-aff">
+                                            <span class="core-cell-polarity"
+                                                >+</span
+                                            >
+                                            <span
+                                                class="core-cell-form"
+                                                x-text="formLabelJp(coreForms(result).past.plain.aff.key)"
+                                            ></span>
+                                            <span
+                                                class="core-cell-value"
+                                                x-text="coreForms(result).past.plain.aff.value"
+                                            ></span>
+                                        </div>
+                                        <div class="core-cell-neg">
+                                            <span class="core-cell-polarity"
+                                                >−</span
+                                            >
+                                            <span
+                                                class="core-cell-form"
+                                                x-text="formLabelJp(coreForms(result).past.plain.neg.key)"
+                                            ></span>
+                                            <span
+                                                class="core-cell-value"
+                                                x-text="coreForms(result).past.plain.neg.value"
+                                            ></span>
+                                        </div>
+                                    </div>
+                                    <div class="core-cell">
+                                        <div class="core-cell-aff">
+                                            <span class="core-cell-polarity"
+                                                >+</span
+                                            >
+                                            <span
+                                                class="core-cell-form"
+                                                x-text="formLabelJp(coreForms(result).past.polite.aff.key)"
+                                            ></span>
+                                            <span
+                                                class="core-cell-value"
+                                                x-text="coreForms(result).past.polite.aff.value"
+                                            ></span>
+                                        </div>
+                                        <div class="core-cell-neg">
+                                            <span class="core-cell-polarity"
+                                                >−</span
+                                            >
+                                            <span
+                                                class="core-cell-form"
+                                                x-text="formLabelJp(coreForms(result).past.polite.neg.key)"
+                                            ></span>
+                                            <span
+                                                class="core-cell-value"
+                                                x-text="coreForms(result).past.polite.neg.value"
+                                            ></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- More forms (te-form first, then conditional / volitional / potential / passive / causative / imperative) -->
+                            <div
+                                class="more-forms-label"
+                                x-text="ui.moreFormsTitle"
+                            ></div>
+                            <div class="conj-table">
+                                <template
+                                    x-for="(entry,i) in supplementaryEntries(result)"
+                                    :key="entry[0]"
+                                >
+                                    <div class="conj-row">
+                                        <div
+                                            class="conj-label"
+                                            x-text="formLabel(entry[0])"
+                                        ></div>
+                                        <div
+                                            class="conj-value"
+                                            x-text="entry[1]"
+                                        ></div>
+                                    </div>
+                                </template>
+                            </div></div
+                    ></template>
+
+                    <!-- Empty state -->
+                    <div
+                        x-show="!result&&!loading&&!error&&!disambig"
+                        style="
+                            text-align: center;
+                            padding: 48px 24px;
+                            color: #d0ccc0;
+                        "
+                    >
+                        <div
+                            class="float"
+                            style="font-size: 52px; margin-bottom: 12px"
+                        >
+                            動
+                        </div>
+                        <p style="font-size: 13px; color: #bbb">
+                            Type a Japanese verb — kanji, hiragana, or romaji
+                        </p>
+                        <p
+                            style="
+                                font-size: 11px;
+                                color: #ccc;
+                                margin-top: 8px;
+                            "
+                        >
+                            419 verbs built-in · accepts romaji (e.g. nomu,
+                            taberu, kiku)
+                        </p>
+                    </div>
+                </div>
+
+                <!-- ─── STUDY ─── -->
+                <div x-show="mode==='study'" x-transition class="fade-in">
+                    <p
+                        style="
+                            text-align: center;
+                            font-size: 13px;
+                            color: #aaa;
+                            margin-bottom: 24px;
+                        "
+                        x-text="ui.studyHelp"
+                    ></p>
+                    <div
+                        style="display: flex; flex-direction: column; gap: 24px"
+                    >
+                        <template
+                            x-for="v in referenceVerbs"
+                            :key="v.verb"
+                        >
+                            <div>
+                                <div
+                                    style="
+                                        display: flex;
+                                        align-items: center;
+                                        gap: 10px;
+                                        margin-bottom: 8px;
+                                        flex-wrap: wrap;
+                                    "
+                                >
+                                    <span
+                                        x-text="displayVerb(v.verb)"
+                                        style="
+                                            font-size: 22px;
+                                            font-weight: 700;
+                                            color: #1a1a2e;
+                                        "
+                                    ></span>
+                                    <span
+                                        x-text="v.meaning"
+                                        style="font-size: 13px; color: #999"
+                                    ></span>
+                                    <span
+                                        class="badge"
+                                        :class="'badge-'+v.type"
+                                        x-text="typeLabel(v.type)"
+                                    ></span>
+                                </div>
+                                <div class="conj-table">
+                                    <template
+                                        x-for="(entry,i) in conjEntries(conjugateForDisplay(v.verb,v.type))"
+                                        :key="v.verb+entry[0]"
+                                    >
+                                        <div class="conj-row">
+                                            <div
+                                                class="conj-label"
+                                                x-text="formLabel(entry[0])"
+                                            ></div>
+                                            <div class="conj-value">
+                                                <template
+                                                    x-if="entry[0] === 'dictionary'"
+                                                >
+                                                    <span
+                                                        x-text="entry[1]"
+                                                    ></span>
+                                                </template>
+                                                <template
+                                                    x-if="entry[0] !== 'dictionary'"
+                                                >
+                                                    <span>
+                                                        <span
+                                                            x-show="!studyRevealed.has(v.verb+entry[0])"
+                                                        >
+                                                            <button
+                                                                class="reveal-btn"
+                                                                @click="studyRevealed.add(v.verb+entry[0]);studyRevealed=new Set(studyRevealed)"
+                                                                x-text="ui.studyReveal"
+                                                            ></button>
+                                                        </span>
+                                                        <span
+                                                            x-show="studyRevealed.has(v.verb+entry[0])"
+                                                            x-text="entry[1]"
+                                                            class="fade-in"
+                                                        ></span>
+                                                    </span>
+                                                </template>
+                                            </div>
+                                        </div>
+                                    </template>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+
+                <!-- ─── QUIZ ─── -->
+                <div x-show="mode==='quiz'" x-transition class="fade-in">
+                    <!-- Settings -->
+                    <div
+                        x-show="!quizStarted"
+                        class="card"
+                        style="padding: 32px; max-width: 480px; margin: 0 auto"
+                    >
+                        <h2
+                            style="
+                                font-size: 18px;
+                                font-weight: 700;
+                                color: #1a1a2e;
+                                margin: 0 0 22px;
+                                text-align: center;
+                            "
+                            x-text="ui.quizSettingsTitle"
+                        ></h2>
+                        <div style="margin-bottom: 22px">
+                            <label
+                                style="
+                                    display: block;
+                                    font-size: 11px;
+                                    font-weight: 600;
+                                    color: #999;
+                                    margin-bottom: 10px;
+                                    letter-spacing: 1.5px;
+                                    font-family: &quot;DM Mono&quot;, monospace;
+                                "
+                                x-text="ui.quizFormsLabel"
+                            ></label>
+                            <div
+                                style="display: flex; flex-wrap: wrap; gap: 8px"
+                            >
+                                <template x-for="form in quizForms" :key="form">
+                                    <button
+                                        class="form-chip"
+                                        :class="selectedForms.has(form)&&'form-chip-active'"
+                                        @click="toggleForm(form)"
+                                        x-text="formLabelJp(form)"
+                                    ></button>
+                                </template>
+                            </div>
+                        </div>
+                        <div style="margin-bottom: 26px">
+                            <label
+                                style="
+                                    display: block;
+                                    font-size: 11px;
+                                    font-weight: 600;
+                                    color: #999;
+                                    margin-bottom: 10px;
+                                    letter-spacing: 1.5px;
+                                    font-family: &quot;DM Mono&quot;, monospace;
+                                "
+                            >
+                                <span x-text="ui.quizQuestionsLabel"></span>:
+                                <span x-text="quizCount"></span>
+                            </label>
+                            <input
+                                type="range"
+                                min="5"
+                                max="20"
+                                x-model.number="quizCount"
+                                style="width: 100%; accent-color: #d94f5c"
+                            />
+                        </div>
+                        <button
+                            class="btn-primary"
+                            style="
+                                width: 100%;
+                                padding: 14px;
+                                font-size: 15px;
+                                border-radius: 10px;
+                            "
+                            :style="!selectedForms.size&&'opacity:.4;cursor:not-allowed'"
+                            :disabled="!selectedForms.size"
+                            @click="startQuiz()"
+                            x-text="ui.quizStartButton"
+                        ></button>
+                    </div>
+
+                    <!-- Quiz done -->
+                    <div
+                        x-show="quizStarted&&quizDone"
+                        class="card fade-in"
+                        style="
+                            padding: 40px 32px;
+                            text-align: center;
+                            max-width: 480px;
+                            margin: 0 auto;
+                        "
+                    >
+                        <div
+                            style="font-size: 48px; margin-bottom: 16px"
+                            x-text="score.correct/score.total>=.8?'🎉':score.correct/score.total>=.5?'💪':'📚'"
+                        ></div>
+                        <h2
+                            style="
+                                font-size: 28px;
+                                font-weight: 900;
+                                color: #1a1a2e;
+                                margin: 0 0 6px;
+                                font-family: &quot;Fraunces&quot;, serif;
+                            "
+                            x-text="score.correct+' / '+score.total"
+                        ></h2>
+                        <p
+                            style="
+                                font-size: 14px;
+                                color: #999;
+                                margin-bottom: 8px;
+                            "
+                            x-text="score.correct/score.total>=.8?'素晴らしい！ Excellent!':score.correct/score.total>=.5?'いい調子！ Good progress!':'頑張って！ Keep practicing!'"
+                        ></p>
+                        <div
+                            style="
+                                width: 100%;
+                                height: 6px;
+                                background: #f0ede8;
+                                border-radius: 3px;
+                                overflow: hidden;
+                                margin-bottom: 28px;
+                            "
+                        >
+                            <div
+                                style="
+                                    height: 100%;
+                                    border-radius: 3px;
+                                    transition: width 0.6s ease;
+                                "
+                                :style="'width:'+(score.correct/score.total*100)+'%;background:'+(score.correct/score.total>=.8?'#4ead6a':score.correct/score.total>=.5?'#d4a040':'#d94f5c')"
+                            ></div>
+                        </div>
+                        <button
+                            class="btn-primary"
+                            style="border-radius: 10px"
+                            @click="quizStarted=false"
+                            x-text="ui.quizDoneTryAgain"
+                        ></button>
+                    </div>
+
+                    <!-- Quiz active -->
+                    <div x-show="quizStarted&&!quizDone">
+                        <div class="progress-bar">
+                            <div
+                                class="progress-fill"
+                                :style="'width:'+(quizIndex/quizQuestions.length*100)+'%'"
+                            ></div>
+                        </div>
+
+                        <div
+                            class="card"
+                            style="
+                                padding: 32px;
+                                max-width: 480px;
+                                margin: 0 auto;
+                                position: relative;
+                            "
+                            x-data="{quizInput:'',status:null,showHint:false}"
+                            x-effect="if($store.quizTick){quizInput='';status=null;showHint=false;$nextTick(()=>$refs.qi?.focus())}"
+                        >
+                            <div
+                                style="
+                                    position: absolute;
+                                    top: 16px;
+                                    right: 20px;
+                                    font-size: 12px;
+                                    color: #ccc;
+                                    font-family: &quot;DM Mono&quot;, monospace;
+                                "
+                                x-text="(quizIndex+1)+'/'+quizQuestions.length"
+                            ></div>
+                            <div
+                                style="text-align: center; margin-bottom: 28px"
+                            >
+                                <div
+                                    x-text="displayVerb(currentQ().verb)"
+                                    style="
+                                        font-size: 40px;
+                                        font-weight: 700;
+                                        color: #1a1a2e;
+                                        margin-bottom: 4px;
+                                    "
+                                ></div>
+                                <div
+                                    x-text="currentQ().meaning"
+                                    style="
+                                        font-size: 13px;
+                                        color: #999;
+                                        margin-bottom: 14px;
+                                    "
+                                ></div>
+                                <div
+                                    style="
+                                        display: inline-block;
+                                        background: #f5f0e8;
+                                        padding: 6px 18px;
+                                        border-radius: 20px;
+                                        font-size: 13px;
+                                        font-weight: 600;
+                                        color: #6b5e45;
+                                    "
+                                >
+                                    →
+                                    <span
+                                        x-text="formLabelJp(currentQ().targetForm)"
+                                    ></span>
+                                </div>
+                            </div>
+                            <div style="margin-bottom: 16px">
+                                <input
+                                    x-ref="qi"
+                                    type="text"
+                                    x-model="quizInput"
+                                    class="quiz-input"
+                                    @keydown.enter="if(status==='correct'||status==='revealed'){advanceQuiz(status==='correct')}else if(status==='wrong'){quizInput='';status=null;$nextTick(()=>$refs.qi?.focus())}else{if(quizInput.trim()){status=quizInput.trim()===currentAnswer()?'correct':'wrong'}}"
+                                    :disabled="status==='correct'||status==='revealed'"
+                                    placeholder="答えを入力..."
+                                    :style="'border:2px solid '+(status==='correct'?'#4ead6a':status==='wrong'?'#d94f5c':status==='revealed'?'#d4a040':'#ddd')+';background:'+(status==='correct'?'#f2faf4':status==='wrong'?'#fdf2f2':status==='revealed'?'#fdf8ed':'#fff')"
+                                />
+                            </div>
+                            <div
+                                x-show="status==='wrong'"
+                                style="
+                                    text-align: center;
+                                    color: #d94f5c;
+                                    font-size: 13px;
+                                    margin-bottom: 12px;
+                                "
+                                class="shake"
+                            >
+                                惜しい！もう一度 — Try again!
+                            </div>
+                            <div
+                                x-show="status==='correct'"
+                                style="
+                                    text-align: center;
+                                    color: #2e8b4a;
+                                    font-size: 17px;
+                                    margin-bottom: 12px;
+                                    font-weight: 600;
+                                "
+                                class="fade-in"
+                            >
+                                正解！ ✓
+                            </div>
+                            <div
+                                x-show="status==='revealed'"
+                                style="text-align: center; margin-bottom: 12px"
+                                class="fade-in"
+                            >
+                                <span style="color: #a08040; font-size: 13px"
+                                    >Answer:
+                                </span>
+                                <span
+                                    x-text="currentAnswer()"
+                                    style="
+                                        font-size: 22px;
+                                        font-weight: 600;
+                                        color: #1a1a2e;
+                                    "
+                                ></span>
+                            </div>
+                            <div
+                                style="
+                                    display: flex;
+                                    gap: 10px;
+                                    justify-content: center;
+                                    flex-wrap: wrap;
+                                "
+                            >
+                                <template
+                                    x-if="status===null||status==='wrong'"
+                                >
+                                    <div
+                                        style="
+                                            display: flex;
+                                            gap: 10px;
+                                            flex-wrap: wrap;
+                                            justify-content: center;
+                                        "
+                                    >
+                                        <button
+                                            class="btn-primary"
+                                            @click="if(quizInput.trim()){status=quizInput.trim()===currentAnswer()?'correct':'wrong'}"
+                                            x-text="ui.quizCheck"
+                                        ></button>
+                                        <button
+                                            class="btn-ghost"
+                                            @click="showHint=!showHint"
+                                            x-text="showHint?ui.quizHintHide:ui.quizHint"
+                                        ></button>
+                                        <button
+                                            class="btn-ghost"
+                                            style="
+                                                color: #a08040;
+                                                border-color: #d4c8a030;
+                                            "
+                                            @click="status='revealed'"
+                                            x-text="ui.quizReveal"
+                                        ></button>
+                                    </div>
+                                </template>
+                                <template
+                                    x-if="status==='correct'||status==='revealed'"
+                                >
+                                    <button
+                                        class="btn-primary"
+                                        @click="advanceQuiz(status==='correct')"
+                                        x-text="ui.quizNext"
+                                    ></button>
+                                </template>
+                            </div>
+                            <div
+                                x-show="showHint&&status!=='correct'&&status!=='revealed'"
+                                style="
+                                    margin-top: 16px;
+                                    padding: 12px 16px;
+                                    background: #f5f3f8;
+                                    border-radius: 8px;
+                                    font-size: 13px;
+                                    color: #6b5e80;
+                                    text-align: center;
+                                "
+                                class="fade-in"
+                            >
+                                💡 <span x-text="quizHint()"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ─── REFERENCE ─── -->
+                <div x-show="mode==='reference'" x-transition class="fade-in">
+                    <div class="ref-intro">
+                        <div
+                            class="ref-intro-title"
+                            x-text="ui.referenceTitle"
+                        ></div>
+                        <p
+                            class="ref-intro-text"
+                            x-text="ui.referenceIntro"
+                        ></p>
+                    </div>
+
+                    <div
+                        style="
+                            display: flex;
+                            flex-direction: column;
+                            gap: 20px;
+                        "
+                    >
+                        <template x-for="v in referenceVerbs" :key="v.verb">
+                            <div class="ref-card">
+                                <!-- Header: verb, meaning, type, sound-ending -->
+                                <div class="ref-card-head">
+                                    <span
+                                        class="ref-verb"
+                                        x-text="displayVerb(v.verb)"
+                                    ></span>
+                                    <span
+                                        class="ref-meaning"
+                                        x-text="v.meaning"
+                                    ></span>
+                                    <span
+                                        class="badge"
+                                        :class="'badge-'+v.type"
+                                        x-text="typeLabel(v.type)"
+                                    ></span>
+                                    <span
+                                        class="ref-ending-pill"
+                                        :class="'ref-pill-'+v.type"
+                                        x-text="v.ending"
+                                    ></span>
+                                </div>
+
+                                <!-- Forms table: stem fixed, ending highlighted -->
+                                <div class="ref-grid">
+                                    <div class="ref-grid-head">
+                                        <span
+                                            x-text="ui.referenceColForm"
+                                        ></span>
+                                        <span
+                                            x-text="ui.referenceColPlain"
+                                        ></span>
+                                        <span
+                                            x-text="ui.referenceColPolite"
+                                        ></span>
+                                    </div>
+                                    <template
+                                        x-for="(row,ri) in referenceRows(v.verb,v.type)"
+                                        :key="ri"
+                                    >
+                                        <div class="ref-grid-row">
+                                            <span
+                                                class="ref-grid-label"
+                                                x-text="row.label"
+                                            ></span>
+                                            <span class="ref-cell">
+                                                <template x-if="row.plain">
+                                                    <span
+                                                        ><span
+                                                            class="ref-stem"
+                                                            x-text="row.plain.stem"
+                                                        ></span
+                                                        ><span
+                                                            class="ref-ending"
+                                                            :class="'ref-ending-'+v.type"
+                                                            x-text="row.plain.ending"
+                                                        ></span
+                                                    ></span>
+                                                </template>
+                                                <template x-if="!row.plain"
+                                                    ><span class="ref-dash"
+                                                        >—</span
+                                                    ></template
+                                                >
+                                            </span>
+                                            <span class="ref-cell">
+                                                <template x-if="row.polite">
+                                                    <span
+                                                        ><span
+                                                            class="ref-stem"
+                                                            x-text="row.polite.stem"
+                                                        ></span
+                                                        ><span
+                                                            class="ref-ending"
+                                                            :class="'ref-ending-'+v.type"
+                                                            x-text="row.polite.ending"
+                                                        ></span
+                                                    ></span>
+                                                </template>
+                                                <template x-if="!row.polite"
+                                                    ><span class="ref-dash"
+                                                        >—</span
+                                                    ></template
+                                                >
+                                            </span>
+                                        </div>
+                                    </template>
+                                </div>
+
+                                <!-- Ending-movement formula -->
+                                <div
+                                    class="ref-formula"
+                                    x-data="{f:endingFormula(v.verb,v.type)}"
+                                    x-effect="f=endingFormula(v.verb,v.type)"
+                                >
+                                    <div
+                                        class="ref-formula-label"
+                                        x-text="ui.referenceFormulaLabel"
+                                    ></div>
+                                    <template x-if="f.kind==='ichidan'">
+                                        <div class="ref-formula-body">
+                                            <span
+                                                class="ref-formula-from"
+                                                style="
+                                                    text-decoration: line-through;
+                                                    opacity: 0.6;
+                                                "
+                                                >る</span
+                                            >
+                                            <span class="ref-formula-arrow"
+                                                >→</span
+                                            >
+                                            <span
+                                                class="ref-formula-note"
+                                                x-text="ui.referenceFormulaIchidan"
+                                            ></span>
+                                        </div>
+                                    </template>
+                                    <template x-if="f.kind==='godan'">
+                                        <div class="ref-formula-body">
+                                            <span
+                                                class="ref-formula-from"
+                                                x-text="f.ending"
+                                            ></span>
+                                            <span class="ref-formula-arrow"
+                                                >→</span
+                                            >
+                                            <span
+                                                class="ref-formula-to"
+                                                x-text="f.te"
+                                            ></span>
+                                            <span class="ref-formula-sep"
+                                                >/</span
+                                            >
+                                            <span
+                                                class="ref-formula-to"
+                                                x-text="f.ta"
+                                            ></span>
+                                            <template x-if="f.isIku">
+                                                <span
+                                                    class="ref-formula-note"
+                                                    x-text="ui.referenceFormulaIku"
+                                                ></span>
+                                            </template>
+                                        </div>
+                                    </template>
+                                </div>
+
+                                <!-- Memorization note -->
+                                <div class="ref-note">
+                                    <span
+                                        class="ref-note-label"
+                                        x-text="ui.referenceNoteLabel"
+                                    ></span>
+                                    <span x-text="v.note"></span>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+
+                    <!-- Sound-pattern summary -->
+                    <div class="ref-intro" style="margin-top: 28px">
+                        <div
+                            class="ref-intro-title"
+                            x-text="ui.patternsTitle"
+                        ></div>
+                        <p
+                            class="ref-intro-text"
+                            x-text="ui.patternsIntro"
+                        ></p>
+                    </div>
+                    <div class="pattern-table">
+                        <div class="pattern-head">
+                            <span x-text="ui.patternsColEnding"></span>
+                            <span x-text="ui.patternsColPattern"></span>
+                            <span x-text="ui.patternsColExample"></span>
+                        </div>
+                        <template
+                            x-for="(p,pi) in soundPatterns"
+                            :key="pi"
+                        >
+                            <div
+                                class="pattern-row"
+                                x-data="{r:patternRow(p)}"
+                                x-effect="r=patternRow(p)"
+                            >
+                                <span
+                                    class="pattern-group"
+                                    x-text="r.group"
+                                ></span>
+                                <span
+                                    class="pattern-pattern"
+                                    x-text="r.pattern"
+                                ></span>
+                                <span class="pattern-example">
+                                    <span
+                                        ><span
+                                            class="ref-stem"
+                                            x-text="r.verb.stem"
+                                        ></span
+                                        ><span
+                                            class="ref-ending"
+                                            :class="'ref-ending-'+p.type"
+                                            x-text="r.verb.ending"
+                                        ></span
+                                    ></span>
+                                    <span class="ref-formula-arrow">→</span>
+                                    <span
+                                        ><span
+                                            class="ref-stem"
+                                            x-text="r.te.stem"
+                                        ></span
+                                        ><span
+                                            class="ref-ending"
+                                            :class="'ref-ending-'+p.type"
+                                            x-text="r.te.ending"
+                                        ></span
+                                    ></span>
+                                    <span class="ref-formula-sep">/</span>
+                                    <span
+                                        ><span
+                                            class="ref-stem"
+                                            x-text="r.ta.stem"
+                                        ></span
+                                        ><span
+                                            class="ref-ending"
+                                            :class="'ref-ending-'+p.type"
+                                            x-text="r.ta.ending"
+                                        ></span
+                                    ></span>
+                                    <template x-if="r.note"
+                                        ><span
+                                            class="pattern-note"
+                                            x-text="r.note"
+                                        ></span
+                                    ></template>
+                                </span>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </body>
+</html>

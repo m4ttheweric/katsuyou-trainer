@@ -1,0 +1,143 @@
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box }
+body { background: #f6f4f0; font-family: 'Noto Sans JP', -apple-system, sans-serif; min-height: 100vh }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px) } to { opacity: 1; transform: translateY(0) } }
+@keyframes shake { 0%, 100% { transform: translateX(0) } 25% { transform: translateX(-6px) } 75% { transform: translateX(6px) } }
+@keyframes pulse { 0%, 100% { opacity: .4 } 50% { opacity: 1 } }
+@keyframes float { 0%, 100% { transform: translateY(0) } 50% { transform: translateY(-5px) } }
+.fade-in { animation: fadeIn .3s ease } .shake { animation: shake .3s ease } .pulse { animation: pulse 1.2s ease infinite }
+.float { animation: float 3s ease-in-out infinite }
+input::placeholder { color: #c0bbb0 } input:focus { border-color: #1a1a2e !important; outline: none }
+button { cursor: pointer; font-family: inherit }
+
+/* Badges */
+.badge { display: inline-block; padding: 3px 10px; border-radius: 4px; font-size: 11px; font-weight: 600; letter-spacing: .5px }
+.badge-ichidan { background: #d94f5c14; color: #d94f5c; border: 1.5px solid #d94f5c30 }
+.badge-godan { background: #3572b014; color: #3572b0; border: 1.5px solid #3572b030 }
+.badge-suru, .badge-kuru { background: #9b6bb014; color: #9b6bb0; border: 1.5px solid #9b6bb030 }
+.badge-jlpt { background: #f5f0e8; color: #a08050; border: 1.5px solid #e0d5c0 }
+.badge-common { background: #e8f5e8; color: #2e8b4a; border: 1.5px solid #c0e0c0 }
+.badge-jisho { background: #eef2ff; color: #6070b0; border: 1.5px solid #d0d8f0 }
+
+/* Tabs */
+.tab { padding: 9px 22px; font-size: 13px; font-weight: 600; border: none; border-radius: 7px; background: transparent; color: #999; transition: all .2s }
+.tab-active { background: #1a1a2e; color: #fff }
+
+/* Buttons */
+.btn-primary { padding: 10px 24px; font-size: 14px; font-weight: 600; background: #1a1a2e; color: #fff; border: none; border-radius: 8px; transition: all .15s }
+.btn-ghost { padding: 10px 20px; font-size: 13px; font-weight: 500; background: transparent; color: #7a7590; border: 1.5px solid #e0ddd8; border-radius: 8px; transition: all .15s }
+
+/* Conjugation table */
+.conj-table { border-radius: 10px; overflow: hidden; border: 1px solid #e8e5e0 }
+.conj-row { display: grid; grid-template-columns: 1fr 1fr }
+.conj-row:not(:last-child) { border-bottom: 1px solid #f0ede8 }
+.conj-row:nth-child(odd) { background: #faf9f7 } .conj-row:nth-child(even) { background: #fff }
+.conj-label { padding: 11px 16px; font-size: 13px; color: #7a7590; font-weight: 500; border-right: 1px solid #f0ede8 }
+.conj-value { padding: 11px 16px; font-size: 17px; font-weight: 500; color: #1a1a2e; min-height: 42px; display: flex; align-items: center }
+.reveal-btn { background: none; border: 1.5px dashed #d0cdc5; border-radius: 6px; padding: 4px 14px; color: #b0aca0; font-size: 12px; transition: all .2s }
+.reveal-btn:hover { border-color: #d94f5c; color: #d94f5c }
+
+/* Card */
+.card { background: #fff; border-radius: 14px; border: 1px solid #e8e5e0 }
+.info-card { border-radius: 10px; padding: 18px 20px; margin-bottom: 14px }
+
+/* Stem breakdown */
+.breakdown-card { border-radius: 10px; padding: 16px 20px; margin-bottom: 14px; border: 1px solid #e8e5e0; background: #fff }
+.breakdown-toggle { background: none; border: none; width: 100%; text-align: left; padding: 0; display: flex; align-items: center; justify-content: space-between }
+.row-chart { border-radius: 8px; overflow: hidden; border: 1px solid #e8e5e0; margin-bottom: 16px }
+.row-header { display: grid; grid-template-columns: 70px 44px 24px 44px 1fr; background: #f5f3f0; padding: 8px 12px; font-size: 10px; font-weight: 600; color: #999; letter-spacing: .5px; border-bottom: 1px solid #e8e5e0; text-transform: uppercase }
+.row-item { display: grid; grid-template-columns: 70px 44px 24px 44px 1fr; padding: 9px 12px; align-items: center }
+.row-item:nth-child(odd) { background: #faf9f7 } .row-item:nth-child(even) { background: #fff }
+.row-item:not(:last-child) { border-bottom: 1px solid #f0ede8 }
+
+/* Te-form box */
+.te-box { padding: 12px 16px; border-radius: 8px; background: #fdf8ed; border: 1px solid #e8dcc0 }
+
+/* Quiz */
+.quiz-input { width: 100%; padding: 14px 18px; font-size: 22px; font-family: inherit; border-radius: 10px; text-align: center; transition: all .2s }
+.form-chip { padding: 7px 14px; font-size: 13px; font-weight: 500; border-radius: 20px; border: 1.5px solid #e0ddd5; background: #fff; color: #aaa; transition: all .15s }
+.form-chip-active { border-color: #d94f5c; background: #d94f5c10; color: #d94f5c }
+.progress-bar { width: 100%; height: 3px; background: #e8e5e0; border-radius: 2px; overflow: hidden; margin-bottom: 24px }
+.progress-fill { height: 100%; background: #d94f5c; border-radius: 2px; transition: width .3s ease }
+
+/* Disambig */
+.disambig-btn { display: flex; align-items: center; gap: 12px; padding: 14px 18px; background: #fff; border: 1px solid #e8e5e0; border-radius: 10px; width: 100%; text-align: left; transition: all .15s }
+.disambig-btn:hover { border-color: #3572b0 }
+
+/* Core forms 2×2 grid (Plain/Polite × Non-Past/Past) */
+.core-card { background: #fff; border-radius: 14px; border: 1px solid #e8e5e0; padding: 18px 20px; margin-bottom: 14px }
+.core-card-title { font-size: 11px; font-weight: 700; color: #6b5e45; letter-spacing: 1.5px; text-transform: uppercase; font-family: 'DM Mono', monospace; margin-bottom: 2px }
+.core-card-subtitle { font-size: 12px; color: #b0aca0; margin-bottom: 14px }
+.core-grid { display: grid; grid-template-columns: 70px 1fr 1fr; gap: 1px; background: #f0ede8; border-radius: 8px; overflow: hidden; border: 1px solid #f0ede8 }
+.core-grid-corner, .core-grid-col-header, .core-grid-row-header { background: #faf9f7; font-size: 10px; font-weight: 700; color: #999; letter-spacing: 1.2px; text-transform: uppercase; padding: 8px 10px; display: flex; align-items: center; justify-content: center; font-family: 'DM Mono', monospace }
+.core-grid-row-header { writing-mode: horizontal-tb; justify-content: center }
+.core-cell { background: #fff; padding: 0; display: flex; flex-direction: column }
+.core-cell-aff, .core-cell-neg { padding: 10px 12px; display: grid; grid-template-columns: 18px 1fr; grid-template-rows: auto auto; column-gap: 8px; row-gap: 2px; align-items: baseline }
+.core-cell-aff { border-bottom: 1px solid #f0ede8 }
+.core-cell-polarity { grid-row: 1 / span 2; font-size: 16px; font-weight: 700; color: #c0bbb0; text-align: center }
+.core-cell-aff .core-cell-polarity { color: #4ead6a }
+.core-cell-neg .core-cell-polarity { color: #d94f5c }
+.core-cell-form { font-size: 10px; font-weight: 600; color: #999; letter-spacing: .3px }
+.core-cell-value { font-size: 17px; font-weight: 600; color: #1a1a2e; line-height: 1.2 }
+
+.more-forms-label { font-size: 11px; font-weight: 700; color: #999; letter-spacing: 1.5px; text-transform: uppercase; font-family: 'DM Mono', monospace; margin: 4px 4px 10px }
+
+/* Reference page (sound-ending model verbs) */
+.ref-intro { background: #fff; border: 1px solid #e8e5e0; border-radius: 14px; padding: 18px 20px; margin-bottom: 18px }
+.ref-intro-title { font-size: 12px; font-weight: 700; color: #6b5e45; letter-spacing: 1px; text-transform: uppercase; font-family: 'DM Mono', monospace; margin-bottom: 6px }
+.ref-intro-text { font-size: 13px; color: #7a7590; line-height: 1.7 }
+.ref-card { background: #fff; border: 1px solid #e8e5e0; border-radius: 14px; padding: 18px 20px }
+.ref-card-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 14px }
+.ref-verb { font-size: 26px; font-weight: 700; color: #1a1a2e }
+.ref-meaning { font-size: 13px; color: #999 }
+.ref-ending-pill { margin-left: auto; font-size: 13px; font-weight: 700; padding: 3px 12px; border-radius: 20px; letter-spacing: .3px }
+.ref-pill-ichidan { background: #d94f5c14; color: #d94f5c; border: 1.5px solid #d94f5c30 }
+.ref-pill-godan { background: #3572b014; color: #3572b0; border: 1.5px solid #3572b030 }
+.ref-pill-suru, .ref-pill-kuru { background: #9b6bb014; color: #9b6bb0; border: 1.5px solid #9b6bb030 }
+.ref-grid { border-radius: 10px; overflow: hidden; border: 1px solid #e8e5e0 }
+.ref-grid-head { display: grid; grid-template-columns: 1.15fr 1fr 1fr; background: #f5f3f0; padding: 8px 14px; font-size: 10px; font-weight: 700; color: #999; letter-spacing: .4px; text-transform: uppercase; border-bottom: 1px solid #e8e5e0 }
+.ref-grid-row { display: grid; grid-template-columns: 1.15fr 1fr 1fr; align-items: center; padding: 9px 14px }
+.ref-grid-row:nth-child(odd) { background: #faf9f7 } .ref-grid-row:nth-child(even) { background: #fff }
+.ref-grid-row:not(:last-child) { border-bottom: 1px solid #f0ede8 }
+.ref-grid-label { font-size: 12px; color: #7a7590; font-weight: 500 }
+.ref-cell { font-size: 18px; font-weight: 600 }
+.ref-stem { color: #1a1a2e; white-space: nowrap }
+.ref-ending { padding: 1px 5px; border-radius: 5px; font-weight: 700; white-space: nowrap; display: inline-block }
+.ref-ending-ichidan { background: #d94f5c14; color: #d94f5c }
+.ref-ending-godan { background: #3572b014; color: #3572b0 }
+.ref-ending-suru, .ref-ending-kuru { background: #9b6bb014; color: #9b6bb0 }
+.ref-dash { color: #cfcabf; font-size: 16px }
+.ref-formula { margin-top: 14px; padding: 12px 16px; border-radius: 8px; background: #fdf8ed; border: 1px solid #e8dcc0 }
+.ref-formula-label { font-size: 10px; font-weight: 700; color: #a08040; letter-spacing: 1px; margin-bottom: 10px }
+.ref-formula-body { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-size: 20px; font-weight: 700 }
+.ref-formula-from { color: #1a1a2e; background: #fff; border: 1px solid #e8dcc0; padding: 2px 12px; border-radius: 6px }
+.ref-formula-to { color: #a08040; background: #fff; border: 1px solid #e8dcc0; padding: 2px 12px; border-radius: 6px }
+.ref-formula-arrow, .ref-formula-sep { color: #cbb88a; font-size: 15px }
+.ref-formula-note { font-size: 12px; font-weight: 500; color: #a8935f }
+.ref-note { margin-top: 12px; font-size: 13px; color: #6b5e45; line-height: 1.7 }
+.ref-note-label { font-weight: 700; color: #2e5984; margin-right: 4px }
+
+/* Sound-pattern summary table */
+.pattern-table { border-radius: 10px; overflow: hidden; border: 1px solid #e8e5e0 }
+.pattern-head { display: grid; grid-template-columns: 92px 92px 1fr; background: #f5f3f0; padding: 8px 14px; font-size: 10px; font-weight: 700; color: #999; letter-spacing: .4px; text-transform: uppercase; border-bottom: 1px solid #e8e5e0 }
+.pattern-row { display: grid; grid-template-columns: 92px 92px 1fr; align-items: center; padding: 10px 14px; gap: 6px }
+.pattern-row:nth-child(odd) { background: #faf9f7 } .pattern-row:nth-child(even) { background: #fff }
+.pattern-row:not(:last-child) { border-bottom: 1px solid #f0ede8 }
+.pattern-group { font-size: 15px; font-weight: 700; color: #1a1a2e }
+.pattern-pattern { font-size: 13px; font-weight: 600; color: #a08040 }
+.pattern-example { font-size: 16px; font-weight: 600; display: flex; align-items: center; gap: 6px; flex-wrap: wrap }
+.pattern-note { font-size: 11px; font-weight: 500; color: #b08968; flex-basis: 100%; margin-top: 2px }
+
+@media (max-width: 480px) {
+  .ref-card, .ref-intro { padding: 16px 14px }
+  .ref-grid-head, .ref-grid-row { grid-template-columns: 84px 1fr 1fr; padding-left: 10px; padding-right: 10px }
+  .ref-grid-label { font-size: 11px }
+  .ref-cell { font-size: 16px }
+  .pattern-head, .pattern-row { grid-template-columns: 64px 72px 1fr }
+}
+
+/* Kanji ↔ Kana toggle */
+.script-toggle { display: inline-flex; background: #fff; border-radius: 8px; padding: 3px; border: 1px solid #e8e5e0; gap: 2px }
+.script-toggle-btn { padding: 6px 14px; font-size: 12px; font-weight: 600; border: none; border-radius: 6px; background: transparent; color: #aaa; transition: all .15s; font-family: inherit }
+.script-toggle-btn:hover { color: #1a1a2e }
+.script-toggle-active { background: #1a1a2e; color: #fff }
+.script-toggle-active:hover { color: #fff }
